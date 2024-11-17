@@ -1,4 +1,4 @@
-function constants() {
+function Constants() {
 	const rows = 3;
 	const cols = 3;
 
@@ -18,7 +18,7 @@ function Cell() {
 }
 
 function GameBoard() {
-	const { rows, cols } = constants();
+	const { rows, cols } = Constants();
 	const board = [];
 
 	// Create a 2d array that will represent the state of the game board
@@ -53,8 +53,8 @@ function GameBoard() {
 
 function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 	const players = [
-		{ name: playerOneName, token: 1 },
-		{ name: playerTwoName, token: 2 },
+		{ name: playerOneName, token: 1, won: false },
+		{ name: playerTwoName, token: 2, won: false },
 	];
 	let activePlayer = players[0];
 
@@ -72,7 +72,7 @@ function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 	};
 
 	const checkTie = (board) => {
-		const { rows, cols } = constants();
+		const { rows, cols } = Constants();
 		let count = 0;
 
 		for (let row = 0; row < rows; row++) {
@@ -89,7 +89,7 @@ function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 	};
 
 	const checkWin = (board) => {
-		const { rows, cols } = constants();
+		const { rows, cols } = Constants();
 		const token = getActivePlayer().token;
 		const directions = [
 			[0, 1],
@@ -129,7 +129,7 @@ function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 
 	const playRound = (row, col) => {
 		// You can't put tokens out of the board
-		const { rows, cols } = constants();
+		const { rows, cols } = Constants();
 		if (row < 0 || row >= rows || col < 0 || col >= cols) {
 			console.log('Out of the board!');
 			return;
@@ -149,6 +149,7 @@ function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 
 		// Check win and tie here
 		if (checkWin(gameBoard.getBoard())) {
+			activePlayer.won = true;
 			gameBoard.printBoard();
 			console.log(`${getActivePlayer().name} won the game!`);
 			return;
@@ -170,7 +171,68 @@ function GameController(playerOneName = 'Tom', playerTwoName = 'Jerry') {
 
 	resetGame();
 
-	return { playRound, getActivePlayer, resetGame };
+	return {
+		playRound,
+		getActivePlayer,
+		resetGame,
+		getBoard: gameBoard.getBoard,
+	};
 }
 
-const game = GameController();
+(function ScreenController() {
+	const game = GameController();
+
+	const xIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+	const oIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle"><circle cx="12" cy="12" r="10"/></svg>`;
+
+	const turnInfoDom = document.querySelector('.turn-info');
+	const endInfo = document.querySelector('.end-info');
+	const boardDom = document.querySelector('.board');
+
+	const updateScreen = () => {
+		// Clear board
+		boardDom.innerHTML = '';
+
+		// Get newest version of the board and the turn info
+		const board = game.getBoard();
+		const activePlayer = game.getActivePlayer();
+
+		// Display turn info
+		turnInfoDom.textContent = `${activePlayer.name}'s turn ...`;
+
+		// Render board
+		board.forEach((row, rowIndex) => {
+			row.forEach((cell, colIndex) => {
+				const cellDom = document.createElement('button');
+				cellDom.dataset.row = rowIndex;
+				cellDom.dataset.col = colIndex;
+				cellDom.classList.add('cell');
+				if (cell.getValue() === 1) {
+					cellDom.classList.add('cellX');
+					cellDom.innerHTML = xIcon;
+				} else if (cell.getValue() === 2) {
+					cellDom.classList.add('cellO');
+					cellDom.innerHTML = oIcon;
+				}
+
+				boardDom.appendChild(cellDom);
+			});
+		});
+	};
+
+	function boardClickHandler(e) {
+		const row = e.target.dataset.row;
+		const col = e.target.dataset.col;
+
+		if (!row || !col) return;
+
+		console.log(row + ', ' + col);
+		game.playRound(row, col);
+
+		updateScreen();
+	}
+
+	boardDom.addEventListener('click', boardClickHandler);
+
+	updateScreen();
+})();
