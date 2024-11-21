@@ -10,13 +10,79 @@
 		<script src="./scripts/main.js" defer></script>
 	</head>
 	<body>
-		<div class="container">
+		<header class="header">
 			<h1>Tic Tac Toe</h1>
-			<div class="info">
-				<div class="turn-info"></div>
-				<div class="end-info"></div>
+		</header>
+		<main class="main">
+			<div class="players-info">
+				<button class="player-info" id="player-1">
+					<p class="token">X</p>
+					<p class="name"></p>
+					<p class="count">-</p>
+				</button>
+
+				<button class="player-info" id="player-2">
+					<p class="count">-</p>
+					<p class="name"></p>
+					<p class="token">O</p>
+				</button>
 			</div>
+
+			<div class="turn-info"></div>
+
 			<div class="board"></div>
-		</div>
+
+			<div class="buttons">
+				<button id="reset" class="btn">Reset Game</button>
+				<button id="next" class="btn">Next Game</button>
+			</div>
+		</main>
+		<footer class="footer">
+			<p>
+				© 2024 Odin Project Assignment by
+				<a href="https://github.com/JamesChan" target="_blank">James Chen</a>.
+				All rights reserved.
+			</p>
+		</footer>
+
+		<dialog>
+			<form method="dialog">
+				<div class="form-row">
+					<label for="x-icon">
+						<input type="radio" name="token" id="x-icon" value="1" checked /> X
+					</label>
+					<label for="o-icon">
+						<input type="radio" name="token" id="o-icon" value="2" /> O
+					</label>
+				</div>
+
+				<div class="form-row">
+					<input
+						type="text"
+						name="username"
+						placeholder="Enter your name here" />
+				</div>
+				<div class="form-row">
+					<input type="submit" value="Start" />
+				</div>
+			</form>
+
+			<button type="button" id="close">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="lucide lucide-x">
+					<path d="M18 6 6 18" />
+					<path d="m6 6 12 12" />
+				</svg>
+			</button>
+		</dialog>
 	</body>
 </html>
