@@ -1,13 +1,43 @@
-function Constants() {
-	const rows = 3;
-	const cols = 3;
+/* ------------------ Constants ------------------ */
+const ROWS = 3;
+const COLS = 3;
+const X_TOKEN = 1;
+const O_TOKEN = 2;
+const X_ICON = `
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="24"
+			height="24"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			stroke-width="2"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			class="lucide lucide-x">
+			<path d="M18 6 6 18" />
+			<path d="m6 6 12 12" />
+		</svg>`;
+const O_ICON = `
+<svg
+	xmlns="http://www.w3.org/2000/svg"
+	width="24"
+	height="24"
+	viewBox="0 0 24 24"
+	fill="none"
+	stroke="currentColor"
+	stroke-width="2"
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	class="lucide lucide-circle">
+	<circle cx="12" cy="12" r="10" />
+</svg>`;
 
-	return { rows, cols };
-}
-
+/* ------------------ Modules ------------------ */
+// 1. Board cell module
 function Cell() {
 	let value = 0;
-	let inGroup = false;
+	let inLineThree = false;
 
 	const addToken = (token) => {
 		value = token;
@@ -15,23 +45,24 @@ function Cell() {
 
 	const getValue = () => value;
 
-	const setInGroup = (value) => {
-		inGroup = value;
-	};
-	const getInGroup = () => inGroup;
+	const getInLineThree = () => inLineThree;
 
-	return { addToken, getValue, setInGroup, getInGroup };
+	const setInLineThree = (value) => {
+		inLineThree = value;
+	};
+
+	return { addToken, getValue, setInLineThree, getInLineThree };
 }
 
+// 2. Game board module
 function GameBoard() {
-	const { rows, cols } = Constants();
 	const board = [];
 
 	// Create a 2d array that will represent the state of the game board
 	const setBoard = () => {
-		for (let row = 0; row < rows; row++) {
+		for (let row = 0; row < ROWS; row++) {
 			board[row] = [];
-			for (let col = 0; col < cols; col++) {
+			for (let col = 0; col < COLS; col++) {
 				board[row].push(Cell());
 			}
 		}
@@ -43,107 +74,100 @@ function GameBoard() {
 
 	const dropToken = (row, col, token) => {
 		if (board[row][col].getValue() !== 0) return;
+
 		board[row][col].addToken(token);
 	};
 
-	// This method will be used to print our board to the console.
-	const printBoard = () => {
-		const boardWithValues = board.map((row) =>
-			row.map((cell) => cell.getValue())
-		);
-		console.log(boardWithValues);
-	};
-
-	return { setBoard, getBoard, dropToken, printBoard };
+	return { setBoard, getBoard, dropToken };
 }
 
-function GamePlayer(name, token) {
+// 3. Player module
+function Player(name) {
 	return {
 		name: name,
-		token: token,
+		token: null,
 		win: false,
 		count: 0,
+		setToken(token) {
+			this.token = token;
+		},
 	};
 }
 
+// 4. Game controller module
 function GameController() {
-	const playerOne = GamePlayer('Player 1', 1);
-	const playerTwo = GamePlayer('Player 2', 2);
-	console.log({ playerOne });
-
-	let activePlayer = playerOne;
-	let tie = false;
-
 	const gameBoard = GameBoard();
+	let tie = false;
+	let players = [];
+	let activePlayerToken = 1;
 
-	const switchPlayerTurn = () => {
-		activePlayer = activePlayer === playerOne ? playerTwo : playerOne;
+	// Initialize the players
+	const setPlayers = (
+		playerOneName,
+		playerTwoName,
+		playerOneToken = X_TOKEN
+	) => {
+		players = [];
+		if (!playerOneName) playerOneName = 'Tom';
+		if (!playerTwoName) playerTwoName = 'Jerry';
+
+		const playerOne = Player(playerOneName);
+		const playerTwo = Player(playerTwoName);
+
+		// If player token must be 1 or 2
+		if (playerOneToken !== X_TOKEN && playerOneToken !== O_TOKEN) return;
+
+		// Set player token, one is 1, the other must be 2
+		playerOne.setToken(playerOneToken);
+		playerTwo.setToken(playerOneToken === X_TOKEN ? O_TOKEN : X_TOKEN);
+
+		players.push(playerOne);
+		players.push(playerTwo);
 	};
 
-	const getActivePlayer = () => activePlayer;
+	const getActivePlayer = () =>
+		players.find((p) => p.token === activePlayerToken);
+
+	const switchPlayerTurn = () => {
+		activePlayerToken = activePlayerToken === X_TOKEN ? O_TOKEN : X_TOKEN;
+	};
+
+	const getPlayers = () => players;
 
 	const getTie = () => tie;
 
-	const printNewRound = () => {
-		gameBoard.printBoard();
-		console.log(`${getActivePlayer().name}'s turn.`);
-	};
-
-	const checkTie = (board) => {
-		const { rows, cols } = Constants();
-		let count = 0;
-
-		for (let row = 0; row < rows; row++) {
-			for (let col = 0; col < cols; col++) {
-				if (board[row][col].getValue() === 0) {
-					count += 1;
-				}
-			}
-		}
-
-		if (count === 0) return true;
-
-		return false;
-	};
+	// If all cells are occupied, i.e. there is no cell's value is 0, it's a tie.
+	const checkTie = (board) =>
+		!board.flat().some((cell) => cell.getValue() === 0);
 
 	const checkWin = (board) => {
-		const { rows, cols } = Constants();
 		const token = getActivePlayer().token;
+
+		// There are four ways to win:
+		// 3 in a row horizontally, 3 in a row vertically,
+		// 3 in a row diagonally (forward), and 3 in a row diagonally (backward)
 		const directions = [
-			[0, 1],
-			[1, 0],
-			[1, 1],
-			[1, -1],
+			[0, 1], // the horizontal way 					-
+			[1, 0], // the vertical way   					|
+			[1, 1], // the diagonal (forward) way 	/
+			[1, -1], // the diagonal (backward) way  \
 		];
 
-		for (let row = 0; row < rows; row++) {
-			for (let col = 0; col < cols; col++) {
+		for (let row = 0; row < ROWS; row++) {
+			for (let col = 0; col < COLS; col++) {
+				// Ignore any cell occupied by the opponent
 				if (board[row][col].getValue() !== token) continue;
 
+				// Check all the 4 ways to win
 				for ([dr, dc] of directions) {
-					let count = 0;
-					let winGroup = [];
+					// Get 'checkThreeInLine' result, it's an array or null
+					const cellsInLine = checkThreeInLine(board, row, col, dr, dc, token);
 
-					for (let i = 0; i < 3; i++) {
-						const rowIndex = row + dr * i;
-						const colIndex = col + dc * i;
-
-						if (
-							rowIndex >= 0 &&
-							rowIndex < rows &&
-							colIndex >= 0 &&
-							colIndex < cols &&
-							board[rowIndex][colIndex].getValue() === token
-						) {
-							count += 1;
-							winGroup.push(board[rowIndex][colIndex]);
-						}
-					}
-					if (count >= 3) {
-						winGroup.forEach((cell) => cell.setInGroup(true));
+					// If the result exists, convert all cell's state to 'inLineThree'
+					// and return true
+					if (cellsInLine) {
+						cellsInLine.forEach((cell) => cell.setInLineThree(true));
 						return true;
-					} else {
-						winGroup = [];
 					}
 				}
 			}
@@ -151,118 +175,111 @@ function GameController() {
 
 		return false;
 	};
+
+	function checkThreeInLine(board, row, col, dr, dc, token) {
+		let count = 0;
+		let cellsInLineThree = [];
+
+		// Use current cell's coordinate to calculate current cell
+		// and its next two neighbors's coordinates in four directions
+		for (let i = 0; i < 3; i++) {
+			const rowIndex = row + dr * i;
+			const colIndex = col + dc * i;
+
+			// Then check if these coordinates are out of the board range
+			if (
+				rowIndex >= 0 &&
+				rowIndex < ROWS &&
+				colIndex >= 0 &&
+				colIndex < COLS &&
+				// And if these coordinates contain the same value
+				board[rowIndex][colIndex].getValue() === token
+			) {
+				// Count the cells which contains the same value
+				// and push them into an array
+				count += 1;
+				cellsInLineThree.push(board[rowIndex][colIndex]);
+			}
+		}
+
+		// Lastly, if there are 3 cells in the array,
+		// return it, otherwise return null
+		return count >= 3 ? cellsInLineThree : null;
+	}
 
 	const playRound = (row, col) => {
 		// You can't put tokens out of the board
-		const { rows, cols } = Constants();
-		if (row < 0 || row >= rows || col < 0 || col >= cols) {
-			console.log('Out of the board!');
-			return;
-		}
+		if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
 
 		// You can't put tokens on cells occupied
-		if (gameBoard.getBoard()[row][col].getValue() !== 0) {
-			console.log('Cell occupied!');
-			return;
-		}
+		if (gameBoard.getBoard()[row][col].getValue() !== 0) return;
 
 		// Current player drop a token
-		console.log(
-			`${getActivePlayer().name} is dropping token into (${row}, ${col}).`
-		);
 		gameBoard.dropToken(row, col, getActivePlayer().token);
 
 		// Check win and tie here
 		if (checkWin(gameBoard.getBoard())) {
+			const activePlayer = getActivePlayer();
 			activePlayer.win = true;
 			activePlayer.count += 1;
-			gameBoard.printBoard();
-			console.log(`${getActivePlayer().name} win the game!`);
 			return;
 		} else if (checkTie(gameBoard.getBoard())) {
 			tie = true;
-			console.log({ tie });
-
-			gameBoard.printBoard();
-			console.log("No one win the game. It's a tie!");
 			return;
 		}
 
 		switchPlayerTurn();
-		printNewRound();
-	};
-
-	const resetGame = () => {
-		nextGame();
-		playerOne.count = 0;
-		playerTwo.count = 0;
 	};
 
 	const nextGame = () => {
 		gameBoard.setBoard();
-
-		activePlayer = playerOne;
-		playerOne.win = false;
-		playerTwo.win = false;
 		tie = false;
+		activePlayerToken = 1;
+		players.forEach((player) => (player.win = false));
 	};
 
-	resetGame();
+	const restart = () => {
+		nextGame();
+		players.forEach((player) => (player.count = 0));
+	};
+
+	restart();
 
 	return {
 		getTie,
 		playRound,
+		setPlayers,
+		getPlayers,
 		getActivePlayer,
-		playerOne,
-		playerTwo,
-		resetGame,
+		restart,
 		nextGame,
 		getBoard: gameBoard.getBoard,
 	};
 }
 
-(function ScreenController() {
-	const game = GameController();
-
-	const xIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
-	const oIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle"><circle cx="12" cy="12" r="10"/></svg>`;
-
-	const turnInfoDom = document.querySelector('.turn-info');
+// 5. Update screen module
+function UpdateScreen() {
+	const playerOneInfoDom = document.querySelector('.player-1');
+	const playerTwoInfoDom = document.querySelector('.player-2');
 	const boardDom = document.querySelector('.board');
-	const resetBtnDom = document.querySelector('.buttons #reset');
-	const nextBtnDom = document.querySelector('.buttons #next');
-	const playerOneName = document.querySelector('#player-1 .name');
-	const playerTwoName = document.querySelector('#player-2 .name');
-	const countOneDom = document.querySelector('#player-1 .count');
-	const countTwoDom = document.querySelector('#player-2 .count');
-	const playerInfoOne = document.querySelector('#player-1');
-	const playerInfoTwo = document.querySelector('#player-2');
+	const gameInfoDom = document.querySelector('.game-info');
 
-	const updateScreen = () => {
+	const toggleBoardFrozen = () => {
+		boardDom
+			.querySelectorAll('button')
+			.forEach((btn) => (btn.disabled = !btn.disabled));
+	};
+
+	const updateScreen = (game) => {
 		// Clear board
 		boardDom.innerHTML = '';
 
 		// Get newest version of the board and the turn info
 		const board = game.getBoard();
+		const players = game.getPlayers();
 		const activePlayer = game.getActivePlayer();
 
-		// Render players information
-		playerOneName.textContent = game.playerOne.name;
-		countOneDom.textContent =
-			game.playerOne.count === 0 ? '-' : game.playerOne.count;
-		playerTwoName.textContent = game.playerTwo.name;
-		countTwoDom.textContent =
-			game.playerTwo.count === 0 ? '-' : game.playerTwo.count;
-
-		if (activePlayer.token === 1) {
-			playerInfoOne.classList.add('active');
-			playerInfoTwo.classList.remove('active');
-		} else {
-			playerInfoOne.classList.remove('active');
-			playerInfoTwo.classList.add('active');
-		}
-
-		// Render board
+		/* --------------- Render board --------------- */
 		board.forEach((row, rowIndex) => {
 			row.forEach((cell, colIndex) => {
 				const cellDom = document.createElement('button');
@@ -272,127 +289,160 @@ function GameController() {
 				cellDom.classList.add('cell');
 
 				if (cell.getValue() === 1) {
-					cellDom.classList.add('cellX');
-					cellDom.innerHTML = xIcon;
+					cellDom.classList.add('x-token');
+					cellDom.innerHTML = X_ICON;
 				} else if (cell.getValue() === 2) {
-					cellDom.classList.add('cellO');
-					cellDom.innerHTML = oIcon;
+					cellDom.classList.add('o-token');
+					cellDom.innerHTML = O_ICON;
 				}
 
 				// if cells in line 3
-				if (cell.getInGroup()) {
-					cellDom.classList.add('win-group');
+				if (cell.getInLineThree()) {
+					cellDom.classList.add('three-in-line');
 				}
 
 				boardDom.appendChild(cellDom);
 			});
 		});
 
-		// Display turn info
+		/* --------------- Render players information --------------- */
+		// 1. The content
+		playerOneInfoDom.innerHTML = `
+			<p class='token ${players[0].token === 1 ? 'x-token' : 'o-token'}'>${
+			players[0].token === 1 ? X_ICON : O_ICON
+		}</p>
+			<p>${players[0].name}</p>
+			<p>${players[0].count === 0 ? '-' : players[0].count}</p>
+		`;
+		playerTwoInfoDom.innerHTML = `
+		<p>${players[1].count === 0 ? '-' : players[1].count}</p>
+		<p>${players[1].name}</p>
+		<p class='token ${players[0].token === 1 ? 'x-token' : 'o-token'}'>${
+			players[1].token === 1 ? X_ICON : O_ICON
+		}</p>
+		`;
+
+		// 2. The color
+		if (players[0].token === 1) {
+			playerOneInfoDom.classList.add('x-token');
+			playerOneInfoDom.classList.remove('o-token');
+			playerTwoInfoDom.classList.add('o-token');
+			playerTwoInfoDom.classList.remove('x-token');
+		} else if (players[1].token === 1) {
+			playerOneInfoDom.classList.add('o-token');
+			playerOneInfoDom.classList.remove('x-token');
+			playerTwoInfoDom.classList.add('x-token');
+			playerTwoInfoDom.classList.remove('o-token');
+		}
+
+		// 3. Highlighted when active
+		if (players[0] === activePlayer) {
+			playerOneInfoDom.classList.add('active');
+			playerTwoInfoDom.classList.remove('active');
+		} else if (players[1] === activePlayer) {
+			playerOneInfoDom.classList.remove('active');
+			playerTwoInfoDom.classList.add('active');
+		}
+
+		/* --------------- Display turn information --------------- */
 		if (activePlayer.win) {
-			turnInfoDom.textContent = `${activePlayer.name} wins!`;
-			turnInfoDom.classList.add('win-info');
+			gameInfoDom.textContent = `${activePlayer.name} wins!`;
+			gameInfoDom.classList.add('win-info');
 			toggleBoardFrozen();
 		} else if (game.getTie()) {
-			turnInfoDom.textContent = `Tie.`;
+			gameInfoDom.textContent = `It's a tie.`;
 		} else {
-			turnInfoDom.textContent = `${activePlayer.name}'s turn.`;
+			gameInfoDom.textContent = `${activePlayer.name}'s turn.`;
 		}
 	};
 
-	const toggleBoardFrozen = () => {
-		boardDom
-			.querySelectorAll('button')
-			.forEach((btn) => (btn.disabled = !btn.disabled));
-	};
+	return { updateScreen, toggleBoardFrozen };
+}
+
+// 6. Display controller IIFE module
+(function DisplayController() {
+	const game = GameController();
+	const { updateScreen, toggleBoardFrozen } = UpdateScreen();
+	game.setPlayers();
+
+	const gameInfoDom = document.querySelector('.game-info');
+	const boardDom = document.querySelector('.board');
+	const restartBtnDom = document.querySelector('#restart-game');
+	const nextBtnDom = document.querySelector('#next-game');
+	const setBtnDom = document.querySelector('#set-game');
+
+	// ---------- Dialog element references ----------
+	const dialogDom = document.querySelector('dialog');
+	const closeDom = document.querySelector('#close');
+	const formDom = document.querySelector('form');
 
 	function boardClickHandler(e) {
-		const row = e.target.dataset.row;
-		const col = e.target.dataset.col;
+		const rowIndex = e.target.dataset.row;
+		const colIndex = e.target.dataset.col;
 
-		if (!row || !col) return;
+		if (!rowIndex || !colIndex) return;
 
-		console.log(row + ', ' + col);
-		game.playRound(row, col);
-
-		updateScreen();
+		game.playRound(rowIndex, colIndex);
+		updateScreen(game);
 	}
 
-	const resetGame = () => {
-		game.resetGame();
+	const restart = () => {
+		game.restart();
 		toggleBoardFrozen();
-		turnInfoDom.classList.remove('win-info');
-		updateScreen();
+		gameInfoDom.classList.remove('win-info');
+		updateScreen(game);
 	};
 
 	const nextGame = () => {
 		game.nextGame();
 		toggleBoardFrozen();
-		turnInfoDom.classList.remove('win-info');
-		updateScreen();
+		gameInfoDom.classList.remove('win-info');
+		updateScreen(game);
 	};
 
-	boardDom.addEventListener('click', boardClickHandler);
-	resetBtnDom.addEventListener('click', resetGame);
-	nextBtnDom.addEventListener('click', nextGame);
+	const showDialog = (players) => {
+		// Make current players displayed in form
+		if (players) {
+			const playerOneNameDom = document.querySelector('#playerOneName');
+			const playerTwoNameDom = document.querySelector('#playerTwoName');
+			const tokenOneDom = document.querySelector('#x-token');
+			const tokenTwoDom = document.querySelector('#o-token');
 
-	playerOneName.addEventListener('keydown', (event) => {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-
-			game.playerOne.name = event.target.value;
-			playerOneName.blur();
-			updateScreen();
+			playerOneNameDom.value = players[0]?.name || '';
+			playerTwoNameDom.value = players[1]?.name || '';
+			tokenOneDom.checked = players[0]?.token === 1;
+			tokenTwoDom.checked = players[1]?.token === 1;
 		}
-	});
+		dialogDom.showModal();
+	};
 
-	playerOneName.addEventListener('focusout', (event) => {
-		event.preventDefault();
-
-		game.playerOne.name = event.target.value;
-		playerOneName.blur();
-		updateScreen();
-	});
-
-	playerTwoName.addEventListener('keydown', (event) => {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-
-			game.playerTwo.name = event.target.value;
-			playerTwoName.blur();
-
-			updateScreen();
-		}
-	});
-
-	playerTwoName.addEventListener('focusout', (event) => {
-		event.preventDefault();
-
-		game.playerTwo.name = event.target.value;
-		playerOneName.blur();
-		updateScreen();
-	});
-
-	updateScreen();
-	showForm();
-})();
-
-function showForm() {
-	const dialogDom = document.querySelector('dialog');
-	const closeDom = document.querySelector('#close');
-	const formDom = document.querySelector('form');
-
-	dialogDom.showModal();
-
-	formDom.addEventListener('submit', (event) => {
+	function submitForm(event) {
 		event.preventDefault();
 
 		const formData = new FormData(event.target);
-		console.log(Object.fromEntries(formData.entries()));
+		const token = +formData.get('token');
+		const playerOneName = formData.get('playerOneName');
+		const playerTwoName = formData.get('playerTwoName');
+		game.setPlayers(playerOneName, playerTwoName, token);
 
 		formDom.reset();
 		dialogDom.close();
-	});
+		updateScreen(game);
+	}
 
-	closeDom.addEventListener('click', () => dialogDom.close());
-}
+	/* ---------- Event handlers ---------- */
+	function setupEventListeners() {
+		boardDom.addEventListener('click', boardClickHandler);
+		restartBtnDom.addEventListener('click', restart);
+		nextBtnDom.addEventListener('click', nextGame);
+		setBtnDom.addEventListener('click', () => showDialog(game.getPlayers()));
+
+		// Dialog event handlers
+		closeDom.addEventListener('click', () => dialogDom.close());
+		formDom.addEventListener('submit', submitForm);
+	}
+
+	setupEventListeners();
+	updateScreen(game);
+	showDialog();
+})();
