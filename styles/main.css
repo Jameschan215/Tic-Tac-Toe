@@ -228,10 +228,10 @@ h1 {
 	transition: color 200ms ease-in-out;
 }
 
-.btn svg {
+/* .btn svg {
 	width: 100%;
 	height: 100%;
-}
+} */
 
 .btn:hover {
 	color: var(--white);
