@@ -6,8 +6,6 @@ const O_TOKEN = 2;
 const X_ICON = `
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
 			viewBox="0 0 24 24"
 			fill="none"
 			stroke="currentColor"
@@ -21,8 +19,6 @@ const X_ICON = `
 const O_ICON = `
 <svg
 	xmlns="http://www.w3.org/2000/svg"
-	width="24"
-	height="24"
 	viewBox="0 0 24 24"
 	fill="none"
 	stroke="currentColor"
