@@ -1,4 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Advent+Pro:ital,wght@0,100..900;1,100..900&family=Concert+One&family=Gideon+Roman&family=Monda:wght@400..700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Rowdies:wght@300;400;700&family=Spicy+Rice&display=swap');
+@font-face {
+	font-family: 'HeaderFont';
+	src: url(../fonts/Happy-School.otf) format('opentype');
+}
+
+@font-face {
+	font-family: 'Monda';
+	src: url(../fonts/Monda.ttf) format('truetype');
+}
 
 :root {
 	--x-icon: #f472b6;
@@ -24,6 +32,7 @@ body {
 	font-optical-sizing: auto;
 	font-weight: 400;
 	font-style: normal;
+
 	font-size: 1.8rem;
 
 	display: flex;
@@ -41,14 +50,10 @@ body {
 }
 
 h1 {
-	font-size: 3.6rem;
-	font-weight: 700;
+	font-family: 'HeaderFont', sans-serif;
+	font-size: 4rem;
 	text-transform: uppercase;
 	text-align: center;
-
-	font-family: 'Rowdies', sans-serif;
-	font-weight: 300;
-	font-style: normal;
 }
 
 .main {
@@ -66,7 +71,6 @@ h1 {
 	width: 100%;
 	height: 48px;
 	max-width: 400px;
-	font-weight: 500;
 	text-align: center;
 	display: flex;
 	justify-content: center;
@@ -75,7 +79,7 @@ h1 {
 
 .game-info.win-info {
 	opacity: 0;
-	font-weight: 500;
+	font-weight: 700;
 	animation: boldInfo 200ms 250ms ease-in-out forwards;
 }
 
@@ -92,7 +96,7 @@ h1 {
 .player-info {
 	flex-grow: 0;
 	width: 100%;
-	max-width: 192px;
+	max-width: 180px;
 	height: 48px;
 	padding: 0 16px;
 	border-radius: 10px;
@@ -180,7 +184,7 @@ h1 {
 	background-color: rgba(255, 255, 255, 0.01);
 	border: none;
 	border-radius: 2px;
-	box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.1);
+	box-shadow: 0 0 5px 5px rgba(0, 0, 0, 0.2);
 	color: inherit;
 }
 
@@ -239,7 +243,7 @@ h1 {
 .footer a {
 	color: inherit;
 	text-decoration: none;
-	font-weight: 700;
+	font-weight: 900;
 	transition: color 200ms ease-in-out;
 }
 
