@@ -547,4 +547,8 @@ input[type='submit']:hover {
 		width: 24px;
 		height: 24px;
 	}
+
+	.footer {
+		margin-top: 40px;
+	}
 }
