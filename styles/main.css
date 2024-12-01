@@ -542,4 +542,9 @@ input[type='submit']:hover {
 		grid-area: 2 / 1 / -1 / -1;
 		margin: 0 auto;
 	}
+
+	.btn {
+		width: 24px;
+		height: 24px;
+	}
 }
